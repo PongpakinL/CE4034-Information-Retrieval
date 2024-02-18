@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/jqcloud2/dist/jqcloud.min.css">
+    <title>Search Engine</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        #searchContainer {
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin: 0 auto;
+            margin-bottom: 2rem;
+        }
+
+        #searchBar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px 0 0 4px;
+            margin-right: -1px;
+        }
+
+        button {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-align: center;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        select {
+            width: 80%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        #chart {
+            width: 50%;
+            height: 250px;
+            float: left;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #searchresult {
+            width: 50%;
+            height: 500px;
+            float: right;
+            overflow: auto;
+        }
+
+        #word-cloud-container {
+            width: 50%;
+            height: 200px;
+            float: left;
+            margin: 0 auto;
+        }
+
+        #word-cloud {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        #word-cloud-container h3 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Search Engine</h1>
+    <div id="searchContainer">
+        <form id="searchBar" method="POST" action="/result">
+            <input type="text" id="searchInput" placeholder="Type your query..." name="search">
+            <select id="filter", name="filter">
+                <option value="">-- Select Filter --</option>
+                <option value="Positive">Positive</option>
+                <option value="Negative">Negative</option>
+                <option value="Neutral">Neutral</option>
+            </select>
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    {% if result %}   
+        <div id="chart">
+            <canvas id="myChart"></canvas>
+        </div>
+        <script>
+            var ctx = document.getElementById("myChart").getContext("2d");
+            var myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ["Positive", "Negative", "Neutral"],
+                datasets: [{
+                backgroundColor: [
+                    "#33FF33",
+                    "#FF3333",
+                    "#A0A0A0"
+                ],
+                data: {{result[1]}}
+                }]
+            }
+            });
+        </script>
+
+        <div id="searchresult">
+            <h2>Search found {{ result[0]|length }}</h2>
+            {% for item in result[0] %}
+                <hr>
+                <p><strong>Text: </strong>{{ item[0] }}</p>
+                {% if item[1] == 1 %}
+                    <p><strong>Label: </strong><span style = "background-color:#33FF33">Positive</span></p>
+                {% endif %}
+                {% if item[1] == -1 %}
+                    <p><strong>Label: </strong><span style = "background-color:#FF3333">Negative</span></p>
+                {% endif %}
+                {% if item[1] == 0 %}
+                    <p><strong>Label: </strong><span style = "background-color:#A0A0A0">Neutral</span></p>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div id="word-cloud-container">
+            <h3>Most Common Keywords from search result</h3>
+            <div id="word-cloud"></div>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jqcloud2/dist/jqcloud.min.js"></script>
+        <script>
+            var words = {{result[2]|tojson}};
+
+            $(function() {
+                $('#word-cloud').jQCloud(words, {
+                    delay: 150,
+                    shape: 'diamond',
+                    autoResize: true,
+                    colors: ['#f000ff', '#0000ff']
+                });
+            });
+
+        </script>
+    {% endif %}
+</body>
+</html>
